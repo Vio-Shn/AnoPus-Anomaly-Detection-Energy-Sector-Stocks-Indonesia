@@ -261,7 +261,7 @@ Kontribusi sangat diterima! Berikut cara contribute:
 
 **Your Name**
 - GitHub: [@vioshn](https://github.com/Vio-Shn)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/viona-siahaan)
+- LinkedIn: [My LinkedIn](https://linkedin.com/in/viona-siahaan)
 
 ---
 
