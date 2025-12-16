@@ -1,6 +1,3 @@
-<div align="center">
-  <img src="static/iamges/logo.png" alt="AnoPus Logo" width="120" height="120">
-  
   # 🚀 AnoPus
   ### AI-Powered Trading Intelligence Platform
   
@@ -20,33 +17,6 @@
 </div>
 
 ---
-
-## 📸 Screenshots
-
-### 🏠 Landing Page
-<div align="center">
-  <img src="screenshots/landing-page.png" alt="Landing Page" width="100%">
-  <p><em>Modern landing page dengan auto-scrolling trending stocks ticker</em></p>
-</div>
-
-### 📊 Dashboard Analytics
-<div align="center">
-  <img src="screenshots/dashboard.png" alt="Dashboard" width="100%">
-  <p><em>Real-time trading dashboard dengan grafik interaktif dan deteksi anomali</em></p>
-</div>
-
-### 🔍 Anomaly Detection
-<div align="center">
-  <img src="screenshots/anomaly-detection.png" alt="Anomaly Detection" width="100%">
-  <p><em>Sistem deteksi anomali dengan pagination dan responsive mobile design</em></p>
-</div>
-
-### 👤 User Profile
-<div align="center">
-  <img src="screenshots/profile.png" alt="Profile Page" width="100%">
-  <p><em>Halaman profil dengan upload foto dan modern card design</em></p>
-</div>
-
 ---
 
 ## ✨ Fitur Utama
