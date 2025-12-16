@@ -1,3 +1,4 @@
+<div align="center">
   # 🚀 AnoPus
   ### AI-Powered Trading Intelligence Platform
   
