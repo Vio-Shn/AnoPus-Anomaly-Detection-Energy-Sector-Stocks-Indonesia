@@ -1,0 +1,94 @@
+{% extends "base.html" %} {% block title %}Login - AnoPus{% endblock %} {% block
+footer %}{% endblock %} {% block content %}
+<!-- Converted to Tailwind CSS with responsive design -->
+<div class="flex flex-col md:flex-row min-h-screen bg-[#0f0f1e]">
+  <!-- Left side: Image/Branding -->
+  <div
+    class="relative flex-1 bg-gradient-to-br from-[#1a0033] via-[#0f0f1e] to-[#001a33] flex items-center justify-center overflow-hidden h-[30vh] md:h-screen"
+  >
+    <div class="absolute top-0 left-0 w-full h-full">
+      <img
+        src="{{ url_for('static', filename='images/stocks.jpg') }}"
+        alt="AnoPus Logo"
+        class="w-full h-full object-cover"
+      />
+    </div>
+  </div>
+
+  <!-- Right side: Login Form -->
+  <div
+    class="flex-1 flex items-center justify-center px-6 py-8 md:px-12 md:py-16 bg-[#0f0f1e]"
+  >
+    <div class="w-full max-w-md animate-[slideInRight_0.6s_ease-out]">
+      <div class="mb-8">
+        <h2 class="text-white text-3xl md:text-4xl font-bold mb-2">Login</h2>
+        <p class="text-white/60 text-base">
+          Masuk ke akun Anda untuk mulai analisis saham
+        </p>
+      </div>
+
+      <form method="POST" class="space-y-6">
+        <div class="flex flex-col gap-2">
+          <label
+            for="username"
+            class="flex items-center gap-2 font-semibold text-white/90 text-sm"
+          >
+            <i
+              class="fas fa-user bg-gradient-to-r from-cyan-400 to-purple-600 bg-clip-text text-transparent"
+            ></i>
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            required
+            placeholder="Masukkan username Anda"
+            value="{{ request.form.username if request.form }}"
+            class="px-4 py-3 border border-cyan-400/20 rounded-xl text-base transition-all bg-white/5 text-white backdrop-blur-lg placeholder:text-white/40 focus:outline-none focus:border-cyan-400/60 focus:bg-cyan-400/5 focus:ring-4 focus:ring-cyan-400/10 hover:border-cyan-400/40"
+          />
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label
+            for="password"
+            class="flex items-center gap-2 font-semibold text-white/90 text-sm"
+          >
+            <i
+              class="fas fa-lock bg-gradient-to-r from-cyan-400 to-purple-600 bg-clip-text text-transparent"
+            ></i>
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            placeholder="Masukkan password Anda"
+            class="px-4 py-3 border border-cyan-400/20 rounded-xl text-base transition-all bg-white/5 text-white backdrop-blur-lg placeholder:text-white/40 focus:outline-none focus:border-cyan-400/60 focus:bg-cyan-400/5 focus:ring-4 focus:ring-cyan-400/10 hover:border-cyan-400/40"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full mt-4 px-4 py-3 md:py-4 text-base md:text-lg font-semibold bg-gradient-to-r from-cyan-400 to-purple-600 text-white border-0 rounded-xl cursor-pointer transition-all shadow-[0_4px_15px_rgba(0,224,255,0.3)] flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(0,224,255,0.4)] active:translate-y-0"
+        >
+          <i class="fas fa-sign-in-alt"></i>
+          Login Sekarang
+        </button>
+      </form>
+
+      <div class="text-center mt-6 pt-6 border-t border-cyan-400/10">
+        <p class="text-white/60 text-sm">
+          Belum punya akun?
+          <a
+            href="{{ url_for('register') }}"
+            class="text-cyan-400 no-underline font-semibold transition-all hover:text-purple-600 hover:underline"
+            >Daftar di sini</a
+          >
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

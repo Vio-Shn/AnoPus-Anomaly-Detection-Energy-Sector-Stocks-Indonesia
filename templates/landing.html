@@ -1,0 +1,731 @@
+{% extends "base.html" %} {% block content %}
+
+<!-- Hero Section with Tailwind -->
+<div
+  class="relative min-h-screen bg-gradient-to-br from-dark via-dark-light to-dark overflow-hidden"
+>
+  <div
+    class="absolute inset-0 bg-[url('/static/images/grid-pattern.svg')] opacity-10"
+  ></div>
+
+  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+    <div
+      class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-160px)]"
+    >
+      <!-- Hero Text -->
+      <div class="space-y-8 text-center lg:text-left">
+        <div
+          class="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 backdrop-blur-sm"
+        >
+          <span class="text-2xl">⚡</span>
+          <span
+            class="text-sm font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >AI-Powered Trading Intelligence</span
+          >
+        </div>
+
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
+          <span
+            class="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent"
+            >Deteksi Anomali Pasar</span
+          >
+          <span
+            class="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >Sebelum Trader Lain</span
+          >
+        </h1>
+
+        <p
+          class="text-lg sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto lg:mx-0"
+        >
+          Platform trading intelligence berbasis machine learning untuk
+          mendeteksi peluang trading di sektor energi Indonesia dengan akurasi
+          tinggi.
+        </p>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto lg:mx-0">
+          <div class="text-center lg:text-left">
+            <div
+              class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
+              30+
+            </div>
+            <div class="text-sm text-gray-400 mt-1">Saham Energi</div>
+          </div>
+          <div class="text-center lg:text-left">
+            <div
+              class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
+              Real-Time
+            </div>
+            <div class="text-sm text-gray-400 mt-1">Data Updates</div>
+          </div>
+          <div class="text-center lg:text-left">
+            <div
+              class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
+              99.8%
+            </div>
+            <div class="text-sm text-gray-400 mt-1">Akurasi AI</div>
+          </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div
+          class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+        >
+          {% if not current_user.is_authenticated %}
+          <a
+            href="{{ url_for('register') }}"
+            class="group px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 transform hover:scale-105 text-center"
+          >
+            <span class="inline-flex items-center space-x-2">
+              <span>Mulai Trading Lebih Cerdas</span>
+              <span class="group-hover:translate-x-1 transition-transform"
+                >→</span
+              >
+            </span>
+          </a>
+          <a
+            href="{{ url_for('login') }}"
+            class="px-8 py-4 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700 text-white font-semibold hover:bg-white/10 hover:border-primary/50 transition-all duration-300 text-center"
+          >
+            Masuk Akun
+          </a>
+          {% else %}
+          <a
+            href="{{ url_for('dashboard') }}"
+            class="group px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 transform hover:scale-105 text-center"
+          >
+            Lihat Dashboard
+          </a>
+          <a
+            href="{{ url_for('watchlist') }}"
+            class="px-8 py-4 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700 text-white font-semibold hover:bg-white/10 hover:border-primary/50 transition-all duration-300 text-center"
+          >
+            Watchlist Saya
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Hero Image -->
+      <div class="relative hidden lg:block">
+        <div>
+          <img
+            src="{{ url_for('static', filename='images/logo.png') }}"
+            alt="Professional Trader with AI Analytics"
+            class="w-full h-auto object-cover"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Trending Stocks Ticker Section -->
+<section class="py-16 bg-gradient-to-b from-dark-light to-dark">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">
+        <span class="text-2xl mr-2">🔥</span>
+        <span
+          class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+          >Saham Trending Bullish</span
+        >
+      </h2>
+      <p class="text-gray-400 text-lg">
+        Rekomendasi saham energi dengan momentum bullish tinggi
+      </p>
+    </div>
+
+    <!-- Auto-scrolling ticker -->
+    <div class="relative overflow-hidden py-8">
+      <div class="flex animate-scroll hover:pause-animation">
+        <!-- First set of stocks -->
+        {% for i in range(2) %}
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">📈</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >STRONG BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">ADRO.JK</div>
+              <div class="text-sm text-gray-400">Adaro Energy</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+12.5%</div>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">🚀</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">PTBA.JK</div>
+              <div class="text-sm text-gray-400">Bukit Asam</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+8.3%</div>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">💎</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >STRONG BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">BYAN.JK</div>
+              <div class="text-sm text-gray-400">Bayan Resources</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+15.7%</div>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">⚡</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">ITMG.JK</div>
+              <div class="text-sm text-gray-400">Indo Tambangraya</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+9.2%</div>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">🌟</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >STRONG BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">GEMS.JK</div>
+              <div class="text-sm text-gray-400">Golden Energy</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+11.4%</div>
+          </div>
+        </div>
+
+        <div class="flex-shrink-0 w-80 mx-3">
+          <div
+            class="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div class="text-3xl">💰</div>
+              <span
+                class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400 border border-green-500/30"
+                >BUY</span
+              >
+            </div>
+            <div class="mb-2">
+              <div class="text-xl font-bold text-white">MEDC.JK</div>
+              <div class="text-sm text-gray-400">Medco Energi</div>
+            </div>
+            <div class="text-2xl font-bold text-green-400">+7.8%</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="text-center mt-8 space-y-4">
+      <p class="text-gray-400">
+        Dapatkan analisis mendalam untuk setiap saham dengan AI-powered insights
+      </p>
+      {% if not current_user.is_authenticated %}
+      <a
+        href="{{ url_for('register') }}"
+        class="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300"
+        >Mulai Sekarang Gratis</a
+      >
+      {% else %}
+      <a
+        href="{{ url_for('dashboard') }}"
+        class="inline-block px-8 py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-lg hover:shadow-primary/50 transition-all duration-300"
+        >Lihat Analisis Lengkap</a
+      >
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 bg-dark">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2
+      class="text-3xl sm:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+    >
+      Keunggulan Kompetitif
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div
+        class="p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 group"
+      >
+        <div
+          class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+        >
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 48 48"
+            fill="none"
+            class="text-primary"
+          >
+            <path
+              d="M24 4L28 14H38L30 20L34 30L24 24L14 30L18 20L10 14H20L24 4Z"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Deteksi AI Real-Time</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Isolation Forest algorithm mendeteksi aktivitas bandar dan perubahan
+          distribusi harga secara instan
+        </p>
+      </div>
+
+      <div
+        class="p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 group"
+      >
+        <div
+          class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+        >
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 48 48"
+            fill="none"
+            class="text-secondary"
+          >
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M24 14v20M14 24h20"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Sinyal Trading Akurat</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Analisis teknikal mendalam dengan RSI, Moving Average, dan MACD untuk
+          keputusan buy/hold/sell
+        </p>
+      </div>
+
+      <div
+        class="p-8 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm border border-gray-700/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 group"
+      >
+        <div
+          class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+        >
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 48 48"
+            fill="none"
+            class="text-primary"
+          >
+            <rect
+              x="8"
+              y="12"
+              width="32"
+              height="24"
+              rx="2"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <path
+              d="M12 12V8M36 12V8M8 20h32"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-3">Spesialisasi Energi</h3>
+        <p class="text-gray-400 leading-relaxed">
+          Optimized untuk 30+ saham sektor energi Indonesia dengan volatilitas
+          tinggi
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Advantages Section -->
+<section class="py-20 bg-gradient-to-b from-dark to-dark-light" id="keunggulan">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2
+      class="text-3xl sm:text-4xl font-bold text-center mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+    >
+      Mengapa Memilih AnoPus?
+    </h2>
+
+    <p class="text-center text-gray-400 text-lg mb-12 max-w-3xl mx-auto">
+      AnoPus adalah platform trading intelligence yang dirancang khusus untuk
+      trader profesional di pasar modal Indonesia. Dengan teknologi machine
+      learning terdepan, kami membantu Anda mendeteksi peluang trading sebelum
+      trader lain.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Deteksi Anomali Real-Time
+          </h4>
+          <p class="text-gray-400">
+            Deteksi anomali distribusi bandar dengan akurasi tinggi menggunakan
+            AI
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Analisis Teknikal Lengkap
+          </h4>
+          <p class="text-gray-400">
+            Analisis teknikal lengkap dan real-time updates untuk keputusan
+            tepat
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Smart Trading Alerts
+          </h4>
+          <p class="text-gray-400">
+            Smart alerts untuk entry dan exit points optimal berdasarkan AI
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Watchlist Management
+          </h4>
+          <p class="text-gray-400">
+            Watchlist management yang powerful dan intuitif untuk tracking saham
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Dashboard Profesional
+          </h4>
+          <p class="text-gray-400">
+            Dashboard profesional dengan visualisasi data komprehensif
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="flex items-start space-x-4 p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-gray-700/50 hover:border-primary/30 transition-all"
+      >
+        <div
+          class="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold"
+        >
+          ✓
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-white mb-2">
+            Spesialisasi Sektor Energi
+          </h4>
+          <p class="text-gray-400">
+            Fokus pada 30+ saham energi dengan volatilitas tinggi di Indonesia
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-20 bg-dark" id="cara-kerja">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2
+      class="text-3xl sm:text-4xl font-bold text-center mb-4 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent"
+    >
+      Cara Kerja AnoPus
+    </h2>
+    <p class="text-center text-gray-400 text-lg mb-12">
+      Sistem AI kami bekerja dalam 4 tahap untuk memberikan sinyal trading
+      terbaik
+    </p>
+
+    <div class="relative">
+      <!-- Carousel Controls -->
+      <button
+        onclick="moveCarousel(-1)"
+        class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-gray-700 hover:bg-white/20 hover:border-primary/50 transition-all flex items-center justify-center text-white"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M15 18L9 12L15 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+
+      <div class="overflow-hidden rounded-2xl">
+        <div
+          class="flex transition-transform duration-500 ease-out"
+          id="carouselTrack"
+        >
+          <!-- Slide 1 -->
+          <div class="w-full flex-shrink-0 px-4">
+            <div
+              class="p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 backdrop-blur-sm border border-gray-700/50 text-center"
+            >
+              <div class="text-6xl font-bold text-primary/30 mb-4">01</div>
+              <h3 class="text-2xl font-bold text-white mb-4">
+                Data Collection
+              </h3>
+              <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                AnoPus mengumpulkan data real-time dari bursa saham untuk 30+
+                saham sektor energi Indonesia dengan update setiap detik
+              </p>
+              <div class="text-6xl mt-8"></div>
+            </div>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="w-full flex-shrink-0 px-4">
+            <div
+              class="p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 backdrop-blur-sm border border-gray-700/50 text-center"
+            >
+              <div class="text-6xl font-bold text-primary/30 mb-4">02</div>
+              <h3 class="text-2xl font-bold text-white mb-4">
+                Anomaly Detection
+              </h3>
+              <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                AI menggunakan Isolation Forest algorithm untuk mendeteksi pola
+                abnormal yang mengindikasikan aktivitas bandar atau perubahan
+                signifikan
+              </p>
+              <div class="text-6xl mt-8"></div>
+            </div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="w-full flex-shrink-0 px-4">
+            <div
+              class="p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 backdrop-blur-sm border border-gray-700/50 text-center"
+            >
+              <div class="text-6xl font-bold text-primary/30 mb-4">03</div>
+              <h3 class="text-2xl font-bold text-white mb-4">
+                Technical Analysis
+              </h3>
+              <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                Sistem menganalisis RSI, Moving Average, MACD, dan indikator
+                teknikal lainnya secara otomatis untuk konfirmasi sinyal
+              </p>
+              <div class="text-6xl mt-8"></div>
+            </div>
+          </div>
+
+          <!-- Slide 4 -->
+          <div class="w-full flex-shrink-0 px-4">
+            <div
+              class="p-12 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 backdrop-blur-sm border border-gray-700/50 text-center"
+            >
+              <div class="text-6xl font-bold text-primary/30 mb-4">04</div>
+              <h3 class="text-2xl font-bold text-white mb-4">Smart Alerts</h3>
+              <p class="text-gray-400 text-lg max-w-2xl mx-auto">
+                Trader mendapatkan notifikasi signal trading (BUY/SELL/HOLD)
+                dengan confidence score tinggi dan penjelasan lengkap
+              </p>
+              <div class="text-6xl mt-8"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onclick="moveCarousel(1)"
+        class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm border border-gray-700 hover:bg-white/20 hover:border-primary/50 transition-all flex items-center justify-center text-white"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M9 18L15 12L9 6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Carousel Dots -->
+    <div class="flex justify-center space-x-2 mt-8" id="carouselDots">
+      <button
+        onclick="goToSlide(0)"
+        class="w-3 h-3 rounded-full bg-primary transition-all"
+      ></button>
+      <button
+        onclick="goToSlide(1)"
+        class="w-3 h-3 rounded-full bg-gray-600 hover:bg-gray-500 transition-all"
+      ></button>
+      <button
+        onclick="goToSlide(2)"
+        class="w-3 h-3 rounded-full bg-gray-600 hover:bg-gray-500 transition-all"
+      ></button>
+      <button
+        onclick="goToSlide(3)"
+        class="w-3 h-3 rounded-full bg-gray-600 hover:bg-gray-500 transition-all"
+      ></button>
+    </div>
+  </div>
+</section>
+
+<!-- Added Tailwind custom animations in style tag -->
+<style>
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-scroll {
+    animation: scroll 30s linear infinite;
+  }
+  .hover\:pause-animation:hover {
+    animation-play-state: paused;
+  }
+</style>
+
+<script>
+  let currentSlide = 0;
+  const totalSlides = 4;
+
+  function updateCarousel() {
+    const track = document.getElementById("carouselTrack");
+    const dots = document.querySelectorAll("#carouselDots button");
+
+    track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+    dots.forEach((dot, index) => {
+      if (index === currentSlide) {
+        dot.classList.remove("bg-gray-600");
+        dot.classList.add("bg-primary");
+      } else {
+        dot.classList.remove("bg-primary");
+        dot.classList.add("bg-gray-600");
+      }
+    });
+  }
+
+  function moveCarousel(direction) {
+    currentSlide += direction;
+
+    if (currentSlide < 0) {
+      currentSlide = totalSlides - 1;
+    } else if (currentSlide >= totalSlides) {
+      currentSlide = 0;
+    }
+
+    updateCarousel();
+  }
+
+  function goToSlide(index) {
+    currentSlide = index;
+    updateCarousel();
+  }
+
+  // Auto-advance carousel every 5 seconds
+  setInterval(() => {
+    moveCarousel(1);
+  }, 5000);
+</script>
+
+{% endblock %}

@@ -1,0 +1,236 @@
+{% extends "base.html" %} {% block title %}Profile - AnoPus{% endblock %} {%
+block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/profile.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>Profil Saya</h1>
+    <p>Kelola informasi profil Anda</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">
+    {{ message }}
+    <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <div class="profile-content">
+    <!-- Profile Photo Section -->
+    <div class="profile-photo-section">
+      <div class="profile-photo-card">
+        <!-- Added file input and click handler for photo upload -->
+        <form
+          action="{{ url_for('upload_profile_photo') }}"
+          method="POST"
+          enctype="multipart/form-data"
+          id="photoForm"
+          style="display: none"
+        >
+          <input
+            type="file"
+            id="photoInput"
+            name="photo"
+            accept="image/*"
+            onchange="previewAndUpload(this)"
+          />
+        </form>
+        <div
+          class="photo-wrapper"
+          onclick="document.getElementById('photoInput').click()"
+        >
+          <!-- Use dynamic profile photo from session -->
+          <img
+            src="{{ url_for('static', filename=profile_photo) }}"
+            alt="Profile Avatar"
+            id="profilePreview"
+          />
+          <div class="photo-overlay">
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+              />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+        </div>
+        <!-- Changed hint text to encourage upload -->
+        <p class="photo-hint">Klik foto untuk upload gambar baru</p>
+      </div>
+    </div>
+
+    <!-- Profile Information Section -->
+    <div class="profile-info-section">
+      <div class="info-card">
+        <h2>Informasi Pribadi</h2>
+        <form
+          action="{{ url_for('update_profile') }}"
+          method="POST"
+          class="profile-form"
+        >
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              value="{{ current_user.username }}"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value="{{ current_user.email }}"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Akun Dibuat</label>
+            <input
+              type="text"
+              value="{{ current_user.created_at.strftime('%d %B %Y') }}"
+              disabled
+            />
+          </div>
+
+          <button type="submit" class="btn-save">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+              />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Simpan Perubahan
+          </button>
+        </form>
+      </div>
+
+      <!-- Change Password Section -->
+      <div class="info-card">
+        <h2>Ganti Password</h2>
+        <form
+          action="{{ url_for('change_password') }}"
+          method="POST"
+          class="profile-form"
+        >
+          <div class="form-group">
+            <label for="current_password">Password Lama</label>
+            <input
+              type="password"
+              id="current_password"
+              name="current_password"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="new_password">Password Baru</label>
+            <input
+              type="password"
+              id="new_password"
+              name="new_password"
+              required
+              minlength="6"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirm_password">Konfirmasi Password Baru</label>
+            <input
+              type="password"
+              id="confirm_password"
+              name="confirm_password"
+              required
+              minlength="6"
+            />
+          </div>
+
+          <button type="submit" class="btn-save btn-password">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Ubah Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Password validation
+  document
+    .querySelector('form[action*="change-password"]')
+    .addEventListener("submit", function (e) {
+      const newPassword = document.getElementById("new_password").value;
+      const confirmPassword = document.getElementById("confirm_password").value;
+
+      if (newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert("Password baru tidak cocok!");
+      }
+    });
+
+  // Preview and upload function
+  function previewAndUpload(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Ukuran file terlalu besar. Maksimal 5MB");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        alert("File harus berupa gambar");
+        return;
+      }
+
+      // Preview image
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        document.getElementById("profilePreview").src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      // Auto-upload
+      document.getElementById("photoForm").submit();
+    }
+  }
+</script>
+{% endblock %}

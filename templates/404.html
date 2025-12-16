@@ -1,0 +1,46 @@
+{% extends "base.html" %} {% block title %}Halaman Tidak Ditemukan - AnoPus{%
+endblock %} {% block content %}
+<div class="error-container">
+  <div class="error-content">
+    <i class="fas fa-exclamation-triangle error-icon"></i>
+    <h1>404 - Halaman Tidak Ditemukan</h1>
+    <p>Maaf, halaman yang Anda cari tidak ditemukan.</p>
+    <a href="{{ url_for('landing') }}" class="btn btn-primary">
+      <i class="fas fa-home"></i>
+      Kembali ke Beranda
+    </a>
+  </div>
+</div>
+
+<style>
+  .error-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .error-content {
+    text-align: center;
+    color: white;
+  }
+
+  .error-icon {
+    font-size: 4rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+  }
+
+  .error-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-content p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+  }
+</style>
+{% endblock %}

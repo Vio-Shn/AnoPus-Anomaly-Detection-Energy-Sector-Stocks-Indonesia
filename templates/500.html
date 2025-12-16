@@ -1,0 +1,46 @@
+{% extends "base.html" %} {% block title %}Server Error - AnoPus{% endblock %}
+{% block content %}
+<div class="error-container">
+  <div class="error-content">
+    <i class="fas fa-server error-icon"></i>
+    <h1>500 - Server Error</h1>
+    <p>Maaf, terjadi kesalahan pada server. Silakan coba lagi nanti.</p>
+    <a href="{{ url_for('landing') }}" class="btn btn-primary">
+      <i class="fas fa-home"></i>
+      Kembali ke Beranda
+    </a>
+  </div>
+</div>
+
+<style>
+  .error-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .error-content {
+    text-align: center;
+    color: white;
+  }
+
+  .error-icon {
+    font-size: 4rem;
+    color: #ff6b6b;
+    margin-bottom: 1rem;
+  }
+
+  .error-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-content p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+  }
+</style>
+{% endblock %}

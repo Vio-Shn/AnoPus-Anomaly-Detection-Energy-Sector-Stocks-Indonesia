@@ -1,0 +1,283 @@
+/* Completely redesigned auth pages with split-screen layout */
+
+/* Split Screen Container */
+.auth-split-container {
+  display: flex;
+  min-height: 100vh;
+  background: #0f0f1e;
+}
+
+/* Left Side - Image Section */
+.auth-image-section {
+  flex: 1;
+  background: linear-gradient(135deg, #1a0033 0%, #0f0f1e 50%, #001a33 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.auth-image-section::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 224, 255, 0.15) 0%,
+    transparent 70%
+  );
+  animation: rotateGradient 20s linear infinite;
+}
+
+@keyframes rotateGradient {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-image-overlay {
+  position: relative;
+  z-index: 1;
+  /* Center logo since text and features are removed */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.auth-brand-logo {
+  /* Increased logo size as it's the only element */
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  margin-bottom: 0;
+  object-fit: cover;
+  filter: none;
+  animation: none;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Removed h1, p, and auth-features styles as they're no longer needed */
+
+/* Right Side - Form Section */
+.auth-form-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  background: #0f0f1e;
+}
+
+.auth-form-wrapper {
+  width: 100%;
+  max-width: 450px;
+  animation: slideInRight 0.6s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.auth-header {
+  margin-bottom: 2.5rem;
+}
+
+.auth-header h2 {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.form-group label i {
+  background: linear-gradient(135deg, #00e0ff 0%, #8a2be2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  width: 16px;
+}
+
+.form-group input {
+  padding: 0.9rem 1.1rem;
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  backdrop-filter: blur(10px);
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: rgba(0, 224, 255, 0.6);
+  background: rgba(0, 224, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(0, 224, 255, 0.1);
+}
+
+.form-group input:hover {
+  border-color: rgba(0, 224, 255, 0.4);
+}
+
+.btn-auth {
+  width: 100%;
+  justify-content: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #00e0ff 0%, #8a2be2 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 224, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-auth:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 224, 255, 0.4);
+}
+
+.btn-auth:active {
+  transform: translateY(0);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 224, 255, 0.1);
+}
+
+.auth-footer p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: #00e0ff;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.auth-footer a:hover {
+  color: #8a2be2;
+  text-decoration: underline;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .auth-split-container {
+    flex-direction: column;
+  }
+
+  .auth-image-section {
+    min-height: 40vh;
+    padding: 0;
+  }
+
+  /* Removed h1, p, and auth-features responsive styles as they're no longer needed */
+
+  .auth-image-overlay {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+  }
+
+  .auth-brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .auth-form-section {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-image-section {
+    padding: 0;
+  }
+
+  .auth-brand-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Removed h1, p, and auth-features responsive styles as they're no longer needed */
+
+  .auth-form-section {
+    padding: 1.5rem;
+  }
+
+  .auth-header h2 {
+    font-size: 1.5rem;
+  }
+}

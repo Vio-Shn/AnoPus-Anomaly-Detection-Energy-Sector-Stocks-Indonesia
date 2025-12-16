@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}AnoPus - Deteksi Anomali Saham Energi{% endblock %}
+    </title>
+    <!-- Added Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#0ea5e9",
+              secondary: "#8b5cf6",
+              dark: "#0f172a",
+              "dark-light": "#1e293b",
+            },
+          },
+        },
+      };
+    </script>
+    <!-- Removed custom CSS files -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='images/favicon.ico') }}"
+      type="image/x-icon"
+    />
+    {% block styles %}{% endblock %}
+  </head>
+  <body class="font-['Inter'] bg-dark text-white">
+    <!-- Converted navbar to Tailwind -->
+    <nav
+      class="fixed w-full top-0 z-50 bg-dark-light/80 backdrop-blur-lg border-b border-gray-700/50"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <a
+            href="{{ url_for('landing') }}"
+            class="flex items-center space-x-2"
+          >
+            <img
+              src="{{ url_for('static', filename='images/logo.png') }}"
+              alt="AnoPus Logo"
+              class="h-8 w-8"
+            />
+            <span
+              class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+              >AnoPus</span
+            >
+          </a>
+
+          <!-- Desktop Menu -->
+          <div class="hidden md:flex items-center space-x-6">
+            {% if current_user.is_authenticated %}
+            <a
+              href="{{ url_for('landing') }}"
+              class="text-gray-300 hover:text-white transition"
+              >Beranda</a
+            >
+            <a
+              href="{{ url_for('dashboard') }}"
+              class="text-gray-300 hover:text-white transition"
+              >Dashboard</a
+            >
+            <a
+              href="{{ url_for('watchlist') }}"
+              class="text-gray-300 hover:text-white transition"
+              >Watchlist</a
+            >
+            <span class="text-gray-400 text-sm"
+              >Halo, {{ current_user.username }}</span
+            >
+            <a
+              href="{{ url_for('profile') }}"
+              class="px-4 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition"
+            >
+              <i class="fas fa-user mr-1"></i> Profile
+            </a>
+            <!-- Changed logout button to icon-only with red logout icon -->
+            <a
+              href="{{ url_for('logout') }}"
+              class="px-3 py-2 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500/30 hover:text-red-400 transition"
+              title="Logout"
+            >
+              <i class="fas fa-sign-out-alt text-lg"></i>
+            </a>
+            {% else %}
+            <a
+              href="{{ url_for('landing') }}"
+              class="text-gray-300 hover:text-white transition"
+              >Beranda</a
+            >
+            <a
+              href="#keunggulan"
+              class="text-gray-300 hover:text-white transition"
+              >Fitur</a
+            >
+            <a href="#contact" class="text-gray-300 hover:text-white transition"
+              >Tentang</a
+            >
+            <a
+              href="{{ url_for('login') }}"
+              class="text-gray-300 hover:text-white transition"
+              >Login</a
+            >
+            <a
+              href="{{ url_for('register') }}"
+              class="px-6 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-lg hover:shadow-primary/50 transition"
+              >Daftar</a
+            >
+            {% endif %}
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <button
+            id="mobile-menu-button"
+            class="md:hidden text-gray-300 hover:text-white focus:outline-none"
+          >
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                id="menu-icon"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              ></path>
+              <path
+                id="close-icon"
+                class="hidden"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden pb-4">
+          {% if current_user.is_authenticated %}
+          <div class="flex flex-col space-y-3">
+            <span class="text-gray-400 text-sm py-2"
+              >Halo, {{ current_user.username }}</span
+            >
+            <a
+              href="{{ url_for('landing') }}"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Beranda</a
+            >
+            <a
+              href="{{ url_for('dashboard') }}"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Dashboard</a
+            >
+            <a
+              href="{{ url_for('watchlist') }}"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Watchlist</a
+            >
+            <a
+              href="{{ url_for('profile') }}"
+              class="px-4 py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition text-center"
+            >
+              <i class="fas fa-user mr-1"></i> Profile
+            </a>
+            <!-- Changed logout button to icon-only with red logout icon -->
+            <a
+              href="{{ url_for('logout') }}"
+              class="px-3 py-2 rounded-lg bg-red-500/20 text-red-500 hover:bg-red-500/30 hover:text-red-400 transition"
+              title="Logout"
+            >
+              <i class="fas fa-sign-out-alt text-lg"></i>
+            </a>
+          </div>
+          {% else %}
+          <div class="flex flex-col space-y-3">
+            <a
+              href="{{ url_for('landing') }}"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Beranda</a
+            >
+            <a
+              href="#keunggulan"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Fitur</a
+            >
+            <a
+              href="#contact"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Tentang</a
+            >
+            <a
+              href="{{ url_for('login') }}"
+              class="text-gray-300 hover:text-white hover:bg-dark-light/50 px-4 py-2 rounded-lg transition"
+              >Login</a
+            >
+            <a
+              href="{{ url_for('register') }}"
+              class="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-semibold text-center hover:shadow-lg transition"
+              >Daftar</a
+            >
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <!-- Converted flash messages to Tailwind -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="fixed top-20 right-4 z-50 space-y-2">
+      {% for category, message in messages %}
+      <div
+        class="px-6 py-3 rounded-lg {% if category == 'error' %}bg-red-500/20 border border-red-500/50 text-red-300{% else %}bg-green-500/20 border border-green-500/50 text-green-300{% endif %} backdrop-blur-lg shadow-lg animate-slide-in"
+      >
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
+    <!-- Main Content -->
+    <main class="pt-16">{% block content %}{% endblock %}</main>
+
+    <!-- Converted footer to Tailwind -->
+    {% block footer %}
+    <footer
+      class="bg-dark-light border-t border-gray-700/50 mt-20"
+      id="contact"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <!-- Brand Section -->
+          <div class="space-y-4">
+            <div class="flex items-center space-x-2">
+              <img
+                src="{{ url_for('static', filename='images/logo.png') }}"
+                alt="AnoPus Logo"
+                class="h-8 w-8"
+              />
+              <span
+                class="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+                >AnoPus</span
+              >
+            </div>
+            <p class="text-gray-400 text-sm leading-relaxed">
+              Sistem deteksi anomali distribusi bandar saham energi dengan
+              machine learning untuk investor pemula Indonesia
+            </p>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-400 hover:text-primary transition"
+                ><i class="fab fa-facebook text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-400 hover:text-primary transition"
+                ><i class="fab fa-twitter text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-400 hover:text-primary transition"
+                ><i class="fab fa-instagram text-xl"></i
+              ></a>
+              <a href="#" class="text-gray-400 hover:text-primary transition"
+                ><i class="fab fa-linkedin text-xl"></i
+              ></a>
+            </div>
+          </div>
+
+          <!-- Information Section -->
+          <div>
+            <h3 class="text-white font-semibold mb-4">Informasi</h3>
+            <ul class="space-y-2">
+              <li>
+                <a
+                  href="#keunggulan"
+                  class="text-gray-400 hover:text-primary transition"
+                  >Fitur</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#about"
+                  class="text-gray-400 hover:text-primary transition"
+                  >Tentang</a
+                >
+              </li>
+              <li>
+                <a
+                  href="#cara-kerja"
+                  class="text-gray-400 hover:text-primary transition"
+                  >Cara Kerja</a
+                >
+              </li>
+              <li>
+                <a href="#" class="text-gray-400 hover:text-primary transition"
+                  >Dokumentasi</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <!-- Help Section -->
+          <div>
+            <h3 class="text-white font-semibold mb-4">Bantuan</h3>
+            <ul class="space-y-2">
+              <li>
+                <a href="#" class="text-gray-400 hover:text-primary transition"
+                  >Pusat Bantuan</a
+                >
+              </li>
+              <li>
+                <a href="#" class="text-gray-400 hover:text-primary transition"
+                  >Panduan Penggunaan</a
+                >
+              </li>
+              <li>
+                <a href="#" class="text-gray-400 hover:text-primary transition"
+                  >Tutorial</a
+                >
+              </li>
+              <li>
+                <a href="#" class="text-gray-400 hover:text-primary transition"
+                  >FAQ</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <!-- Developer Section -->
+          <div>
+            <h3 class="text-white font-semibold mb-4">Developer</h3>
+            <p class="text-gray-400">
+              <strong class="text-white">Viona Ester Patricia Siahaan</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Bottom -->
+      <div class="border-t border-gray-700/50 py-6">
+        <p class="text-center text-gray-400 text-sm">
+          &copy; 2025 AnoPus. Semua hak dilindungi.
+        </p>
+      </div>
+    </footer>
+    {% endblock %}
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Added mobile menu toggle script -->
+    <script>
+      const mobileMenuButton = document.getElementById("mobile-menu-button");
+      const mobileMenu = document.getElementById("mobile-menu");
+      const menuIcon = document.getElementById("menu-icon");
+      const closeIcon = document.getElementById("close-icon");
+
+      if (mobileMenuButton) {
+        mobileMenuButton.addEventListener("click", () => {
+          mobileMenu.classList.toggle("hidden");
+          menuIcon.classList.toggle("hidden");
+          closeIcon.classList.toggle("hidden");
+        });
+      }
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

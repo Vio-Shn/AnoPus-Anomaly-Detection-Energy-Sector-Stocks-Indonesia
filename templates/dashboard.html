@@ -1,0 +1,3334 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AnoPus{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header dengan update time -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>Dashboard Analisis Saham</h1>
+            <p>Monitor dan analisis saham energi dengan deteksi anomali distribusi bandar</p>
+        </div>
+        <div class="header-actions">
+            <div class="last-update">
+                <i class="fas fa-sync-alt"></i>
+                <span>Update: <span id="current-time">{{ current_time }}</span></span>
+                <div class="status-indicator online"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Added search functionality for stocks -->
+    <div class="search-control-section">
+        <div class="search-container">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="stockSearch" class="search-input" placeholder="Cari saham (kode atau nama)..." autocomplete="off">
+                <button type="button" class="clear-search" id="clearSearch" style="display: none;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-results" id="searchResults" style="display: none;"></div>
+        </div>
+        
+        <div class="control-row">
+            <form method="GET" action="{{ url_for('dashboard') }}" class="period-form" id="periodForm">
+                <input type="hidden" name="stock" id="selectedStock" value="{{ stock_code }}">
+                <div class="period-select-wrapper">
+                    <label for="period"><i class="fas fa-calendar-alt"></i> Periode</label>
+                    <select id="period" name="period" class="period-select">
+                        <option value="1mo" {% if period == '1mo' %}selected{% endif %}>1 Bulan</option>
+                        <option value="3mo" {% if period == '3mo' %}selected{% endif %}>3 Bulan</option>
+                        <option value="6mo" {% if period == '6mo' %}selected{% endif %}>6 Bulan</option>
+                        <option value="1y" {% if period == '1y' %}selected{% endif %}>1 Tahun</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-apply">
+                    <i class="fas fa-check"></i> Terapkan
+                </button>
+            </form>
+            
+            <form method="POST" action="{{ url_for('add_to_watchlist') }}" class="watchlist-form">
+                <input type="hidden" name="stock_code" value="{{ stock_code }}">
+                <button type="submit" class="btn-watchlist">
+                    <i class="fas fa-bookmark"></i> Tambah ke Watchlist
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Improved stock overview with better grid layout -->
+    <div class="stock-overview-grid">
+        <!-- Stock Info Card -->
+        <div class="stock-info-card">
+            <div class="stock-header-modern">
+                <div class="stock-badge-modern">
+                    <span class="stock-code-large">{{ stock_code }}</span>
+                    <span class="stock-name-small">{{ stock_name }}</span>
+                </div>
+                <div class="price-section">
+                    <div class="current-price-large">Rp {{ "{:,.2f}".format(technical_signals.get('current_price', 0) or 0) }}</div>
+                    <div class="price-change-badge {% if (technical_signals.get('price_change', 0) or 0) >= 0 %}positive{% else %}negative{% endif %}">
+                        <i class="fas fa-{% if (technical_signals.get('price_change', 0) or 0) >= 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                        {{ "%.2f"|format(technical_signals.get('price_change', 0) or 0) }}%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="price-details-grid">
+                <div class="price-detail-item">
+                    <span class="detail-label">Open</span>
+                    <span class="detail-value">Rp {{ "{:,.2f}".format(technical_signals.get('open_price', 0) or 0) }}</span>
+                </div>
+                <div class="price-detail-item">
+                    <span class="detail-label">High</span>
+                    <span class="detail-value text-success">Rp {{ "{:,.2f}".format(technical_signals.get('high_price', 0) or 0) }}</span>
+                </div>
+                <div class="price-detail-item">
+                    <span class="detail-label">Low</span>
+                    <span class="detail-value text-danger">Rp {{ "{:,.2f}".format(technical_signals.get('low_price', 0) or 0) }}</span>
+                </div>
+                <div class="price-detail-item">
+                    <span class="detail-label">Volume</span>
+                    <span class="detail-value">{{ "{:,.0f}".format(technical_signals.get('volume', 0) or 0) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Card -->
+        <div class="chart-card-modern">
+            <div class="chart-header-modern">
+                <h3><i class="fas fa-chart-line"></i> Grafik Harga</h3>
+                <div class="chart-type-toggle">
+                    <button class="toggle-btn" data-type="candlestick">
+                        <i class="fas fa-chart-candlestick"></i>
+                    </button>
+                    <button class="toggle-btn" data-type="line">
+                        <i class="fas fa-chart-line"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chart-wrapper-modern">
+                <!-- Added chart overlay for loading states -->
+                <div id="chart-overlay" class="chart-overlay">
+                    <div class="overlay-content">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Memuat data...</p>
+                    </div>
+                </div>
+                <div id="candlestick-chart"></div>
+            </div>
+            <div class="chart-footer-modern">
+                <div class="chart-stat">
+                    <span class="stat-label">Harga Terkini</span>
+                    <span class="stat-value" id="current-chart-price">Rp {{ "{:,.2f}".format(technical_signals.get('current_price', 0) or 0) }}</span>
+                </div>
+                <div class="chart-stat">
+                    <span class="stat-label">Volume</span>
+                    <span class="stat-value" id="current-volume">{{ "{:,.0f}".format(technical_signals.get('volume', 0) or 0) }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Added clear separation between chart and technical signals section -->
+    <!-- Added wrapper container with clear spacing and z-index to prevent overlay -->
+    <div style="clear: both; position: relative; z-index: 1; margin-top: 3rem;">
+        <!-- Technical Signals Section -->
+        <div class="section-title">
+            <h2>Sinyal Teknis</h2>
+            <p>Indikator teknikal untuk analisis saham</p>
+        </div>
+        
+        <div class="signals-grid">
+            <div class="signal-card">
+                <div class="signal-header">
+                    <div class="signal-icon rsi">
+                        <i class="fas fa-wave-square"></i>
+                    </div>
+                    <h3>RSI</h3>
+                    <!-- Add info button for modal -->
+                    <button class="info-button" onclick="showInfoModal('rsi')">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+                <div class="signal-body">
+                    <div class="signal-value">{{ "%.2f"|format(technical_signals.get('rsi', 0) or 0) }}</div>
+                    <div class="signal-gauge">
+                        <div class="gauge-bar">
+                            <div class="gauge-fill" style="width: {{ (technical_signals.get('rsi', 0) or 0) / 100 * 100 }}%"></div>
+                        </div>
+                        <div class="gauge-labels">
+                            <span>0</span>
+                            <span>50</span>
+                            <span>100</span>
+                        </div>
+                    </div>
+                    <div class="signal-status {{ (technical_signals.get('rsi_signal', 'N/A') or 'N/A')|lower }}">
+                        {{ technical_signals.get('rsi_signal', 'N/A') or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="signal-card">
+                <div class="signal-header">
+                    <div class="signal-icon ma">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Moving Average</h3>
+                    <!-- Add info button for modal -->
+                    <button class="info-button" onclick="showInfoModal('ma')">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+                <div class="signal-body">
+                    <div class="signal-value">{{ technical_signals.get('ma_signal', 'N/A') or 'N/A' }}</div>
+                    <div class="signal-description">
+                        {% if technical_signals.get('ma_signal', 'N/A') == 'Bullish' %}
+                            Harga di atas rata-rata bergerak
+                        {% elif technical_signals.get('ma_signal', 'N/A') == 'Bearish' %}
+                            Harga di bawah rata-rata bergerak
+                        {% else %}
+                            Tidak tersedia
+                        {% endif %}
+                    </div>
+                    <div class="signal-status {{ (technical_signals.get('ma_signal', 'N/A') or 'N/A')|lower }}">
+                        {{ technical_signals.get('ma_signal', 'N/A') or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="signal-card">
+                <div class="signal-header">
+                    <div class="signal-icon volume">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Volume</h3>
+                    <!-- Add info button for modal -->
+                    <button class="info-button" onclick="showInfoModal('volume')">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+                <div class="signal-body">
+                    <!-- Memperbaiki display volume signal -->
+                    <div class="signal-value">{{ technical_signals.get('volume_signal', 'N/A') or 'N/A' }}</div>
+                    <div class="signal-description">
+                        {{ technical_signals.get('volume_description', 'Tidak tersedia') }}
+                    </div>
+                    <div class="signal-status {{ (technical_signals.get('volume_signal', 'N/A') or 'N/A')|lower|replace(' ', '-') }}">
+                        {{ technical_signals.get('volume_signal', 'N/A') or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Trading Alert Section -->
+    <div class="section-title" style="margin-top: 2rem;">
+        <h2>Rekomendasi Trading</h2>
+        <p>Analisis otomatis berdasarkan indikator teknikal</p>
+    </div>
+    
+    <div class="trading-alert {{ trading_alert.color }}">
+        <div class="alert-header">
+            <div class="alert-icon">
+                <i class="fas {{ trading_alert.icon }}"></i>
+            </div>
+            <div class="alert-content">
+                <h3 class="alert-recommendation">{{ trading_alert.recommendation }}</h3>
+                <p class="alert-summary">{{ trading_alert.summary }}</p>
+            </div>
+        </div>
+        <div class="alert-body">
+            <h4>Alasan Analisis:</h4>
+            <ul class="alert-reasons">
+                {% for reason in trading_alert.reasons %}
+                <li>{{ reason }}</li>
+                {% endfor %}
+            </ul>
+            <div class="alert-disclaimer">
+                <i class="fas fa-info-circle"></i>
+                <span>Ini adalah analisis otomatis berdasarkan indikator teknikal. Lakukan riset lebih lanjut sebelum mengambil keputusan investasi.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Section -->
+    {% if alerts %}
+    <div class="section-title">
+        <h2>Peringatan & Rekomendasi</h2>
+        <p>Notifikasi penting berdasarkan analisis terkini</p>
+    </div>
+    
+    <div class="alerts-section">
+        {% for alert in alerts %}
+        <div class="alert-item {{ alert.severity|lower }}">
+            <div class="alert-icon">
+                {% if alert.severity == 'HIGH' %}
+                <i class="fas fa-exclamation-triangle"></i>
+                {% elif alert.severity == 'MEDIUM' %}
+                <i class="fas fa-exclamation-circle"></i>
+                {% else %}
+                <i class="fas fa-info-circle"></i>
+                {% endif %}
+            </div>
+            <div class="alert-content">
+                <div class="alert-header">
+                    <h4>{{ alert.type }}</h4>
+                    <span class="alert-severity {{ alert.severity|lower }}">{{ alert.severity }}</span>
+                </div>
+                <p class="alert-message">{{ alert.message }}</p>
+                <div class="alert-action">
+                    <strong>Rekomendasi:</strong> {{ alert.action }}
+                </div>
+            </div>
+            <div class="alert-time">
+                <i class="fas fa-clock"></i>
+                <!-- Fixed strftime error - now handles both string and datetime -->
+                {% if alert.timestamp %}
+                    {% set ts = alert.timestamp %}
+                    {% if ts is string %}
+                        {{ ts }}
+                    {% elif ts.strftime is defined %}
+                        {{ ts.strftime('%d %b %Y %H:%M') }}
+                    {% else %}
+                        {{ ts }}
+                    {% endif %}
+                {% else %}
+                    Baru saja
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Deteksi Anomali Section -->
+    <div class="section-header">
+        <h2>Deteksi Anomali</h2>
+        <!-- Updated subtitle to show current page info instead of total data -->
+        <p>Aktivitas perdagangan yang tidak biasa - Periode: {{ period.upper() if period else '1MO' }}</p>
+    </div>
+    
+    <div class="anomalies-section">
+        {% if anomalies %}
+        <!-- Removed max-height and overflow-y to eliminate scroll, added pagination controls -->
+        <div class="table-container">
+            <table class="anomalies-table">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Foreign Buy</th>
+                        <th>Foreign Sell</th>
+                        <th>Domestic Buy</th>
+                        <th>Domestic Sell</th>
+                        <th>Net Foreign</th>
+                        <th>Net Domestic</th>
+                        <th>Volume Ratio</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="anomalyTableBody">
+                    {% for anomaly in anomalies %}
+                    <tr class="{% if anomaly.is_anomaly %}anomaly{% endif %} anomaly-row">
+                        <!-- Improved date format from ISO to readable format -->
+                        <td class="date-cell">
+                            {% if anomaly.date %}
+                                {% set date_parts = anomaly.date.split('-') if '-' in anomaly.date else anomaly.date.split(' ') %}
+                                {% if date_parts|length >= 3 %}
+                                    {{ date_parts[2] }}/{{ date_parts[1] }}/{{ date_parts[0] }}
+                                {% else %}
+                                    {{ anomaly.date }}
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>{{ "{:,.0f}".format(anomaly.foreign_buy) }}</td>
+                        <td>{{ "{:,.0f}".format(anomaly.foreign_sell) }}</td>
+                        <td>{{ "{:,.0f}".format(anomaly.local_buy) }}</td>
+                        <td>{{ "{:,.0f}".format(anomaly.local_sell) }}</td>
+                        <td class="net-foreign {% if anomaly.net_foreign >= 0 %}positive{% else %}negative{% endif %}">
+                            {{ "{:,.0f}".format(anomaly.net_foreign) }}
+                        </td>
+                        <td class="net-foreign {% if anomaly.net_local >= 0 %}positive{% else %}negative{% endif %}">
+                            {{ "{:,.0f}".format(anomaly.net_local) }}
+                        </td>
+                        <td>
+                            <div class="ratio-container">
+                                <span class="ratio-value">{{ "%.2f"|format(anomaly.get('volume_ratio', 0) or 0) }}</span>
+                                <div class="ratio-bar">
+                                    {% set ratio_value = (anomaly.get('volume_ratio', 0) or 0) * 100 %}
+                                    {% set ratio_width = 100 if ratio_value > 100 else ratio_value %}
+                                    <div class="ratio-fill" style="width: {{ ratio_width }}%"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if anomaly.is_anomaly %}
+                                {% if anomaly.severity == 'critical' %}
+                                <span class="status-badge critical">
+                                    <i class="fas fa-exclamation-circle"></i> KRITIS
+                                </span>
+                                {% elif anomaly.severity == 'high' %}
+                                <span class="status-badge high">
+                                    <i class="fas fa-exclamation-triangle"></i> TINGGI
+                                </span>
+                                {% elif anomaly.severity == 'medium' %}
+                                <span class="status-badge medium">
+                                    <i class="fas fa-exclamation"></i> SEDANG
+                                </span>
+                                {% else %}
+                                <span class="status-badge anomaly">
+                                    <i class="fas fa-info-circle"></i> ANOMALI
+                                </span>
+                                {% endif %}
+                            {% else %}
+                            <span class="status-badge normal">
+                                <i class="fas fa-check-circle"></i> NORMAL
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if anomaly.is_anomaly and anomaly.explanation %}
+                    <tr class="explanation-row anomaly-row">
+                        <td colspan="9" class="anomaly-explanation">
+                            <i class="fas fa-info-circle"></i> <strong>Penjelasan:</strong> {{ anomaly.explanation }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Added pagination controls -->
+        <div class="pagination-controls">
+            <div class="pagination-info">
+                Menampilkan <span id="currentPageInfo">1-10</span> dari <span id="totalDataInfo">{{ anomalies|length }}</span> data
+            </div>
+            <div class="pagination-buttons">
+                <button id="prevPageBtn" class="pagination-btn" onclick="changePage(-1)">
+                    <i class="fas fa-chevron-left"></i> Sebelumnya
+                </button>
+                <span id="pageNumbers" class="page-numbers"></span>
+                <button id="nextPageBtn" class="pagination-btn" onclick="changePage(1)">
+                    Selanjutnya <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <h3>Tidak ada data anomali</h3>
+            <p>Data anomali akan muncul setelah analisis dilakukan</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Educational Modal -->
+<div id="infoModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Penjelasan Indikator</h3>
+            <button class="modal-close" onclick="closeInfoModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalContent">
+            <!-- Content will be injected by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Gunakan CDN yang lebih andal untuk Lightweight Charts -->
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.min.js"></script>
+
+<style>
+/* Modern responsive design improvements */
+:root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --border-color: rgba(148, 163, 184, 0.1);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+}
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* Header Improvements */
+.dashboard-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.dashboard-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Search and Control Section */
+.search-control-section {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 3rem 1rem 3rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.clear-search {
+    position: absolute;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.clear-search:hover {
+    color: var(--text-primary);
+}
+
+.search-results {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.search-result-item {
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background: var(--bg-secondary);
+}
+
+.search-result-item.no-results {
+    cursor: default;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.result-code {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+}
+
+.result-name {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.control-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.period-form {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 300px;
+}
+
+.period-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.period-select-wrapper label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.period-select {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.period-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.btn-apply, .btn-watchlist {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-apply {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-apply:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-watchlist {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-watchlist:hover {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+}
+
+/* Stock Overview Grid */
+.stock-overview-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stock-info-card {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+.stock-header-modern {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stock-badge-modern {
+    margin-bottom: 1rem;
+}
+
+.stock-code-large {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stock-name-small {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.price-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.current-price-large {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.price-change-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 1rem;
+    width: fit-content;
+}
+
+.price-change-badge.positive {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.price-change-badge.negative {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.price-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.price-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
+
+/* Chart Card */
+.chart-card-modern {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    /* Added position relative and z-index to contain chart properly */
+    position: relative;
+    z-index: 2;
+    margin-bottom: 0; /* Remove margin to rely on wrapper spacing */
+}
+
+.chart-header-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-header-modern h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-type-toggle {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--bg-primary);
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+}
+
+.toggle-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.toggle-btn:hover:not(.active) {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.chart-wrapper-modern {
+    height: 400px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    position: relative; /* Needed for overlay positioning */
+    overflow: hidden; /* Ensure content stays within bounds */
+    z-index: 1; /* Ensure it's behind other elements if needed, but above background */
+}
+
+.chart-footer-modern {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.chart-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .stock-overview-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .control-row {
+        flex-direction: column;
+    }
+    
+    .period-form {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .current-price-large {
+        font-size: 2rem;
+    }
+    
+    .stock-code-large {
+        font-size: 1.5rem;
+    }
+    
+    .price-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper-modern {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-control-section {
+        padding: 1rem;
+    }
+    
+    .period-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .period-select-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-apply, .btn-watchlist {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<style>
+/* Skema warna dark theme yang nyaman di mata */
+:root {
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    --secondary: #8b5cf6;
+    --accent: #ec4899;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #06b6d4;
+    
+    /* Warna background yang nyaman - dark blue/gray */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --bg-glass: rgba(30, 41, 59, 0.7);
+    --border-color: #334155;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    
+    /* Shadow untuk depth */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, var(--primary), var(--secondary));
+    --gradient-card: linear-gradient(145deg, #1e293b, #1a2436);
+    --gradient-chart: linear-gradient(180deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05));
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Header Styles */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    background: var(--gradient-card);
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.header-content h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-content p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.last-update {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.online {
+    background: var(--success);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* Trading Alert Section */
+.trading-alert {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    border-left: 4px solid; /* Color will be set by class */
+    transition: transform 0.2s ease;
+}
+
+.trading-alert:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.trading-alert.buy { border-left-color: var(--success); }
+.trading-alert.sell { border-left-color: var(--danger); }
+.trading-alert.hold { border-left-color: var(--warning); }
+.trading-alert.neutral { border-left-color: var(--text-muted); }
+
+.trading-alert .alert-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trading-alert .alert-icon {
+    font-size: 1.8rem;
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.trading-alert.buy .alert-icon { background-color: rgba(16, 185, 129, 0.15); color: var(--success); }
+.trading-alert.sell .alert-icon { background-color: rgba(239, 68, 68, 0.15); color: var(--danger); }
+.trading-alert.hold .alert-icon { background-color: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.trading-alert.neutral .alert-icon { background-color: rgba(148, 163, 184, 0.15); color: var(--text-secondary); }
+
+.trading-alert .alert-content {
+    flex-grow: 1;
+}
+
+.trading-alert .alert-recommendation {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.trading-alert .alert-summary {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+}
+
+.trading-alert .alert-body {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.trading-alert .alert-body h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.trading-alert .alert-reasons {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.trading-alert .alert-reasons li {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.trading-alert .alert-disclaimer {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.trading-alert .alert-disclaimer i {
+    color: var(--warning);
+}
+
+/* Stock Overview Section with Chart */
+.stock-overview-section {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Chart Section Refined */
+.chart-section {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.chart-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.timeframe-group {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.timeframe-btn {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timeframe-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.timeframe-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.chart-type-group {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.chart-type-btn {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.chart-type-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.chart-type-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.chart-container {
+    height: 400px;
+    position: relative;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+/* Fallback styling ketika chart gagal load */
+.chart-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.fallback-content {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem;
+}
+
+.fallback-content i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+    opacity: 0.7;
+}
+
+.fallback-content h4 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.fallback-bars {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    gap: 8px;
+    height: 120px;
+    margin-top: 1.5rem;
+}
+
+.fallback-bars .bar {
+    width: 12px;
+    background: var(--primary);
+    border-radius: 4px 4px 0 0;
+    animation: barAnimation 2s ease-in-out infinite alternate;
+}
+
+.fallback-bars .bar:nth-child(2) { animation-delay: 0.2s; }
+.fallback-bars .bar:nth-child(3) { animation-delay: 0.4s; }
+.fallback-bars .bar:nth-child(4) { animation-delay: 0.6s; }
+.fallback-bars .bar:nth-child(5) { animation-delay: 0.8s; }
+.fallback-bars .bar:nth-child(6) { animation-delay: 1s; }
+.fallback-bars .bar:nth-child(7) { animation-delay: 1.2s; }
+
+@keyframes barAnimation {
+    0% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+.chart-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.overlay-content {
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.overlay-content i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary);
+}
+
+.chart-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.price-info, .volume-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.price-label, .volume-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.current-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.volume-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Stock Control Section */
+.stock-control-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.stock-basic-info {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.stock-basic-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.stock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.stock-badge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.stock-code {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.stock-name {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.price-indicator {
+    text-align: right;
+}
+
+.current-price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.price-change {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    justify-content: center;
+}
+
+.price-change.positive {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.price-change.negative {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stock-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.detail-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+}
+
+.detail-item .label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.detail-item .value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-item .value.positive {
+    color: var(--success);
+}
+
+.detail-item .value.negative {
+    color: var(--danger);
+}
+
+/* Control Section */
+.control-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.control-card, .watchlist-card {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.control-card::before, .watchlist-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.control-card h3, .watchlist-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+}
+
+.control-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* PERBAIKAN: Style untuk dropdown yang lebih jelas */
+.form-select {
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Style untuk option dropdown */
+.form-select option {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border: none;
+}
+
+/* Hover state untuk dropdown */
+.form-select:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--primary-light);
+}
+
+.btn-apply {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-apply:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-watchlist {
+    width: 100%;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-watchlist:hover {
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Section Titles */
+.section-title {
+    margin-top: 2.5rem; /* Increased top margin to prevent overlay */
+    margin-bottom: 1.5rem; /* Increased bottom margin for better spacing */
+    padding: 1rem 0;
+    text-align: center; /* Center align section titles */
+}
+
+.section-title h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.section-title p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Signals Grid */
+.signals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.signal-card {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.signal-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+}
+
+.signal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.signal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.signal-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.signal-icon.rsi {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.signal-icon.ma {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--warning);
+}
+
+.signal-icon.volume {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.signal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Enhanced info button visibility and styling */
+.info-button {
+    margin-left: auto;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6366f1;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.info-button:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #6366f1;
+    color: #6366f1;
+    transform: scale(1.1);
+}
+
+.signal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.signal-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.signal-gauge {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.gauge-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.gauge-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.gauge-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.signal-description {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.signal-status {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+.signal-status.oversold, .signal-status.bullish, .signal-status.high {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.signal-status.overbought, .signal-status.bearish, .signal-status.low {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.signal-status.neutral {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+/* Alerts Section */
+.alerts-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.alert-item {
+    display: flex;
+    gap: 1rem;
+    background: var(--gradient-card);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    border-left: 4px solid;
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.alert-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.alert-item.high {
+    border-left-color: var(--danger);
+}
+
+.alert-item.medium {
+    border-left-color: var(--warning);
+}
+
+.alert-item.low {
+    border-left-color: var(--success);
+}
+
+.alert-icon {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+.alert-item.high .alert-icon {
+    color: var(--danger);
+}
+
+.alert-item.medium .alert-icon {
+    color: var(--warning);
+}
+
+.alert-item.low .alert-icon {
+    color: var(--success);
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.alert-severity {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.alert-severity.high {
+    background: var(--danger);
+    color: white;
+}
+
+.alert-severity.medium {
+    background: var(--warning);
+    color: white;
+}
+
+.alert-severity.low {
+    background: var(--success);
+    color: white;
+}
+
+.alert-message {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.alert-action {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.alert-action strong {
+    color: var(--text-primary);
+}
+
+.alert-time {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Anomalies Section */
+.section-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.anomalies-section {
+    background: var(--gradient-card);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.anomalies-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+}
+
+.table-container {
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    overflow-x: auto;
+    /* Added smooth scrolling for better UX */
+    scroll-behavior: smooth;
+}
+
+/* Style for sticky table header when scrolling */
+.anomalies-table thead {
+    position: sticky;
+    top: 0;
+    background: rgba(30, 41, 59, 0.95);
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.anomalies-table thead th {
+    padding: 16px 12px;
+    background: rgba(30, 41, 59, 0.95);
+}
+
+.anomalies-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.anomalies-table th {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.anomalies-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.anomalies-table tr:last-child td {
+    border-bottom: none;
+}
+
+.anomalies-table tr.anomaly {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.anomalies-table tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.net-foreign.positive {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.net-foreign.negative {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.ratio-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ratio-value {
+    font-weight: 600;
+    min-width: 40px;
+}
+
+.ratio-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.ratio-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.status-badge {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.status-badge.anomaly {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.normal {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* ADDED: Specific status badges for anomaly severity */
+.status-badge.critical {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    animation: pulse 2s infinite;
+    color: white; /* Ensure text is white for readability */
+    border: none; /* Remove border as gradient provides visual distinction */
+}
+
+.status-badge.high {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: white;
+    border: none;
+}
+
+.status-badge.medium {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: none;
+}
+
+
+/* ADDED: Explanation row styling */
+.explanation-row {
+    background: rgba(139, 92, 246, 0.05);
+    border-left: 3px solid #8b5cf6;
+}
+
+.anomaly-explanation {
+    padding: 12px 20px;
+    color: #c4b5fd;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.anomaly-explanation i {
+    color: #a78bfa;
+    margin-right: 8px;
+}
+
+.anomaly-explanation strong {
+    color: #e9d5ff;
+    font-weight: 600;
+}
+
+/* Pagination Styles */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+    padding: 1rem 0;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    padding: 0.75rem 1.5rem;
+}
+
+.pagination-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.pagination-info span {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pagination-btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.pagination-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--primary-light);
+    border-color: var(--primary-light);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    color: var(--text-muted);
+    border-color: var(--border-color);
+    background: var(--bg-primary);
+}
+
+.pagination-btn i {
+    font-size: 0.8rem;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.page-number {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.page-number:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.page-number.active {
+    background: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+
+/* Educational Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 10000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.7); /* Black w/ opacity */
+    backdrop-filter: blur(4px); /* Blur effect */
+    -webkit-backdrop-filter: blur(4px); /* For Safari */
+    padding-top: 60px; /* Location of the box */
+    /* Use flexbox for centering */
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Add .modal.show class to display modal */
+.modal.show {
+    display: flex !important; /* Override display: none */
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+    border: 1px solid var(--border-color);
+    animation: slideDown 0.3s ease-out;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.modal-body h4 {
+    color: var(--text-primary);
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.modal-body p {
+    margin-bottom: 0.75rem;
+}
+
+.modal-body ul {
+    margin-left: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.modal-body strong {
+    color: var(--primary-light);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Empty State */
+.empty-state {
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .stock-overview-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .stock-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .timeframe-group {
+        margin-top: 0.5rem;
+    }
+
+    /* Responsive adjustments for new layout */
+    .stock-overview-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .control-row {
+        flex-direction: column;
+    }
+    
+    .period-form {
+        min-width: 100%;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .header-content h1 {
+        font-size: 1.5rem; /* Adjusted for smaller screens */
+    }
+    
+    .stock-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .price-indicator {
+        text-align: left;
+    }
+    
+    .signals-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .alert-item {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .alert-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .anomalies-table {
+        font-size: 0.8rem;
+    }
+    
+    .anomalies-table th, 
+    .anomalies-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .chart-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .trading-alert .alert-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .trading-alert .alert-reasons {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Responsive adjustments for new layout */
+    .current-price-large {
+        font-size: 2rem;
+    }
+    
+    .stock-code-large {
+        font-size: 1.5rem;
+    }
+    
+    .price-details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper-modern {
+        height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 0.5rem;
+    }
+
+    .dashboard-header {
+        padding: 1rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .header-content p {
+        font-size: 0.9rem;
+    }
+    
+    .search-control-section {
+        padding: 1rem;
+    }
+    
+    .period-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .period-select-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-apply, .btn-watchlist {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .modal-header h3 {
+        font-size: 1.1rem;
+    }
+    
+    .modal-close {
+        font-size: 1.2rem;
+    }
+    
+    .anomalies-table th, .anomalies-table td {
+        padding: 0.75rem 0.4rem;
+        font-size: 0.85rem;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+    
+    .pagination-buttons {
+        gap: 0.5rem;
+    }
+    
+    .pagination-btn, .page-number {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+    }
+}
+</style>
+
+<script>
+console.log('[v0] Dashboard script loaded');
+
+let chart = null;
+let candlestickSeries = null;
+let lineSeries = null;
+let currentChartData = [];
+let currentChartType = 'candlestick';
+let autoRefreshInterval;
+
+function showInfoModal(type) {
+    console.log('[v0] showInfoModal called with type:', type);
+    
+    const modal = document.getElementById('infoModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('modalContent');
+    
+    if (!modal || !title || !content) {
+        console.error('[v0] Modal elements not found');
+        return;
+    }
+    
+    const modalData = {
+        'rsi': {
+            title: 'RSI (Relative Strength Index)',
+            content: `
+                <p><strong>RSI</strong> adalah indikator momentum yang mengukur kekuatan pergerakan harga saham dalam skala 0-100.</p>
+                
+                <h4>Cara Membaca:</h4>
+                <ul>
+                    <li><strong>RSI > 70:</strong> Overbought (Jenuh Beli) - Saham mungkin terlalu mahal, harga bisa turun</li>
+                    <li><strong>RSI 30-70:</strong> Neutral - Kondisi normal, tidak ada sinyal kuat</li>
+                    <li><strong>RSI < 30:</strong> Oversold (Jenuh Jual) - Saham mungkin terlalu murah, harga bisa naik</li>
+                </ul>
+                
+                <h4>Contoh Penggunaan:</h4>
+                <p>Jika RSI = 81 (seperti yang ditampilkan), saham dalam kondisi <strong>overbought</strong>. Ini bisa menjadi sinyal untuk berhati-hati atau consider untuk jual karena kemungkinan harga akan koreksi turun.</p>
+                
+                <h4>Tips:</h4>
+                <p>Jangan hanya mengandalkan RSI. Kombinasikan dengan indikator lain seperti Moving Average dan Volume untuk konfirmasi yang lebih baik.</p>
+            `
+        },
+        'ma': {
+            title: 'Moving Average (Rata-rata Bergerak)',
+            content: `
+                <p><strong>Moving Average</strong> adalah rata-rata harga saham dalam periode tertentu. Digunakan untuk melihat trend harga jangka pendek vs jangka panjang.</p>
+                
+                <h4>Cara Membaca:</h4>
+                <ul>
+                    <li><strong>Bullish:</strong> Harga di atas Moving Average - Trend naik, potensi beli</li>
+                    <li><strong>Bearish:</strong> Harga di bawah Moving Average - Trend turun, potensi jual</li>
+                    <li><strong>Neutral:</strong> Harga mendekati Moving Average - Tidak ada trend jelas</li>
+                </ul>
+                
+                <h4>Contoh Penggunaan:</h4>
+                <p>Jika status <strong>Bullish</strong>, artinya harga saat ini lebih tinggi dari rata-rata historis. Ini menunjukkan momentum positif dan bisa menjadi sinyal untuk hold atau beli.</p>
+                
+                <h4>Tips:</h4>
+                <p>Golden Cross (MA jangka pendek memotong ke atas MA jangka panjang) adalah sinyal bullish kuat. Death Cross (kebalikannya) adalah sinyal bearish kuat.</p>
+            `
+        },
+        'volume': {
+            title: 'Volume Perdagangan',
+            content: `
+                <p><strong>Volume</strong> menunjukkan jumlah saham yang diperdagangkan. Volume tinggi mengkonfirmasi kekuatan pergerakan harga.</p>
+                
+                <h4>Cara Membaca:</h4>
+                <ul>
+                    <li><strong>Volume Tinggi:</strong> Banyak transaksi, pergerakan harga lebih valid</li>
+                    <li><strong>Volume Normal:</strong> Transaksi biasa, tidak ada sinyal khusus</li>
+                    <li><strong>Volume Rendah:</strong> Sedikit transaksi, pergerakan harga kurang reliable</li>
+                </ul>
+                
+                <h4>Contoh Penggunaan:</h4>
+                <p>Jika harga naik dengan <strong>volume tinggi</strong>, ini konfirmasi kuat bahwa trend naik didukung banyak investor. Sebaliknya, harga naik dengan volume rendah bisa jadi trap.</p>
+                
+                <h4>Tips:</h4>
+                <p>Perhatikan spike volume yang tiba-tiba - ini bisa menunjukkan ada news penting atau institutional buying/selling yang signifikan.</p>
+            `
+        }
+    };
+    
+    const data = modalData[type];
+    if (data) {
+        title.textContent = data.title;
+        content.innerHTML = data.content;
+        modal.classList.add('show');
+        console.log('[v0] Modal shown successfully');
+    } else {
+        console.error('[v0] Unknown modal type:', type);
+    }
+}
+
+function closeInfoModal() {
+    console.log('[v0] closeInfoModal called');
+    const modal = document.getElementById('infoModal');
+    if (modal) {
+        modal.classList.remove('show');
+        console.log('[v0] Modal closed');
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeInfoModal();
+    }
+});
+
+
+// Update waktu secara real-time
+function updateCurrentTime() {
+    const now = new Date();
+    const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    document.getElementById('current-time').textContent = now.toLocaleDateString('id-ID', options);
+}
+
+// Update waktu setiap detik
+setInterval(updateCurrentTime, 1000);
+updateCurrentTime();
+
+function initializeChart() {
+    console.log('[v0] Memulai inisialisasi chart...');
+    
+    const chartElement = document.getElementById('candlestick-chart');
+    const overlay = document.getElementById('chart-overlay');
+    
+    if (!chartElement) {
+        console.error('[v0] Chart element tidak ditemukan');
+        return;
+    }
+    
+    if (typeof LightweightCharts === 'undefined') {
+        console.error('[v0] LightweightCharts library tidak terload');
+        showChartError('Gagal memuat library grafik. Silakan refresh halaman.');
+        return;
+    }
+    
+    console.log('[v0] Library LightweightCharts tersedia');
+    
+    try {
+        chartElement.innerHTML = '';
+        
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+        
+        setTimeout(() => {
+            try {
+                chart = LightweightCharts.createChart(chartElement, {
+                    width: chartElement.clientWidth,
+                    height: 400,
+                    layout: {
+                        background: { color: 'transparent' },
+                        textColor: '#94a3b8',
+                    },
+                    grid: {
+                        vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                        horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    },
+                    crosshair: {
+                        mode: LightweightCharts.CrosshairMode.Normal,
+                    },
+                    rightPriceScale: {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                    },
+                    timeScale: {
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        timeVisible: true,
+                        secondsVisible: false,
+                    },
+                    handleScroll: {
+                        mouseWheel: true,
+                        pressedMouseMove: true,
+                    },
+                    handleScale: {
+                        axisPressedMouseMove: true,
+                        mouseWheel: true,
+                        pinch: true,
+                    },
+                });
+                
+                console.log('[v0] Chart berhasil dibuat');
+                
+                candlestickSeries = chart.addCandlestickSeries({
+                    upColor: '#10b981',
+                    downColor: '#ef4444',
+                    borderDownColor: '#ef4444',
+                    borderUpColor: '#10b981',
+                    wickDownColor: '#ef4444',
+                    wickUpColor: '#10b981',
+                });
+                
+                lineSeries = chart.addLineSeries({
+                    color: '#6366f1',
+                    lineWidth: 2,
+                    visible: false,
+                });
+                
+                console.log('[v0] Chart series berhasil dibuat');
+                
+                // Get the active timeframe button to load initial data
+                const activeTimeframeBtn = document.querySelector('.timeframe-btn.active');
+                const initialTimeframe = activeTimeframeBtn ? activeTimeframeBtn.dataset.timeframe : '1d';
+                loadChartDataWithTimeframe(initialTimeframe);
+
+                setupChartControls();
+                
+                window.addEventListener('resize', () => {
+                    if (chart) {
+                        chart.applyOptions({
+                            width: chartElement.clientWidth,
+                        });
+                    }
+                });
+                
+                console.log('[v0] Chart berhasil diinisialisasi');
+                
+            } catch (error) {
+                console.error('[v0] Error dalam inisialisasi chart:', error);
+                showChartError('Terjadi kesalahan saat memuat grafik: ' + error.message);
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('[v0] Error dalam inisialisasi chart:', error);
+        showChartError('Terjadi kesalahan saat memuat grafik: ' + error.message);
+    }
+}
+
+function loadChartDataWithTimeframe(timeframe) {
+    console.log('[v0] Loading chart data for timeframe:', timeframe);
+    const overlay = document.getElementById('chart-overlay');
+
+    if (overlay) {
+        overlay.style.display = 'flex';
+    }
+    
+    const stockCode = "{{ stock_code }}";
+    
+    fetch(`/api/chart_data/${stockCode}?timeframe=${timeframe}`)
+        .then(response => {
+            console.log('[v0] API response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('[v0] API data received:', data);
+            
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+                const chartData = data.data.map(item => {
+                    const timestamp = Math.floor(new Date(item.x).getTime() / 1000);
+                    return {
+                        time: timestamp,
+                        open: item.o,
+                        high: item.h,
+                        low: item.l,
+                        close: item.c
+                    };
+                });
+                
+                chartData.sort((a, b) => a.time - b.time);
+                
+                console.log('[v0] Formatted chart data:', chartData.length, 'candles');
+                
+                if (chartData.length > 0) {
+                    const latestData = chartData[chartData.length - 1];
+                    updateStockInfo(latestData);
+                    updateChartPrice(latestData.close); // Update chart price as well
+                }
+                
+                currentChartData = chartData;
+                renderChart(chartData);
+                hideChartOverlay();
+            } else {
+                console.error('[v0] No data in API response');
+                showChartError('Tidak ada data untuk timeframe ini.');
+                hideChartOverlay();
+            }
+        })
+        .catch(error => {
+            console.error('[v0] Error fetching chart data:', error);
+            showChartError('Gagal memuat data grafik: ' + error.message);
+            hideChartOverlay();
+        });
+}
+
+function updateStockInfo(latestCandle) {
+    console.log('[v0] Updating stock info with latest data:', latestCandle);
+    
+    const detailItems = document.querySelectorAll('.stock-details .detail-item');
+    
+    detailItems.forEach(item => {
+        const label = item.querySelector('.label').textContent.trim();
+        const valueElement = item.querySelector('.value');
+        
+        if (label === 'Open' && latestCandle.open !== undefined) {
+            valueElement.textContent = `Rp ${latestCandle.open.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        } else if (label === 'High' && latestCandle.high !== undefined) {
+            valueElement.textContent = `Rp ${latestCandle.high.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        } else if (label === 'Low' && latestCandle.low !== undefined) {
+            valueElement.textContent = `Rp ${latestCandle.low.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+    });
+    
+    const currentPriceElement = document.querySelector('.stock-basic-info .current-price');
+    if (currentPriceElement && latestCandle.close !== undefined) {
+        currentPriceElement.textContent = `Rp ${latestCandle.close.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+}
+
+function renderChart(data) {
+    console.log('[v0] Rendering chart with', data.length, 'data points, type:', currentChartType);
+    
+    if (!candlestickSeries || !lineSeries) {
+        console.error('[v0] Chart series not initialized');
+        return;
+    }
+    
+    try {
+        if (currentChartType === 'candlestick') {
+            candlestickSeries.applyOptions({ visible: true });
+            lineSeries.applyOptions({ visible: false });
+            candlestickSeries.setData(data);
+        } else {
+            candlestickSeries.applyOptions({ visible: false });
+            lineSeries.applyOptions({ visible: true });
+            
+            const lineData = data.map(item => ({
+                time: item.time,
+                value: item.close
+            }));
+            lineSeries.setData(lineData);
+        }
+        
+        if (chart) {
+            chart.timeScale().fitContent();
+        }
+        console.log('[v0] Chart rendered successfully');
+        
+    } catch (error) {
+        console.error('[v0] Error rendering chart:', error);
+        showChartError('Terjadi kesalahan saat merender grafik.');
+    }
+}
+
+function hideChartOverlay() {
+    const overlay = document.getElementById('chart-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function showChartError(message) {
+    const chartElement = document.getElementById('candlestick-chart');
+    const overlay = document.getElementById('chart-overlay');
+
+    if (overlay) {
+        overlay.innerHTML = '';
+        overlay.style.display = 'none'; // Hide overlay if error is shown directly in chart element
+    }
+
+    if (chartElement) {
+        chartElement.innerHTML = `
+            <div class="chart-fallback">
+                <div class="fallback-content">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h4>Gagal Memuat Grafik</h4>
+                    <p>${message}</p>
+                    <button onclick="window.location.reload()" class="btn-apply" style="margin-top: 1rem;">
+                        <i class="fas fa-redo"></i> Coba Lagi
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function setupChartControls() {
+    const timeframeBtns = document.querySelectorAll('.timeframe-btn');
+    const chartTypeBtns = document.querySelectorAll('.chart-type-btn');
+    
+    timeframeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            timeframeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const timeframe = this.dataset.timeframe;
+            console.log('[v0] Switching to timeframe:', timeframe);
+            
+            loadChartDataWithTimeframe(timeframe);
+        });
+    });
+    
+    chartTypeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const chartType = this.dataset.type;
+            
+            if (chartType === currentChartType) return;
+            
+            chartTypeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentChartType = chartType;
+            
+            console.log('[v0] Switching to chart type:', chartType);
+            
+            if (currentChartData.length > 0) {
+                renderChart(currentChartData);
+            }
+        });
+    });
+}
+
+function updateChartPrice(price) {
+    const priceElement = document.getElementById('current-chart-price');
+    if (priceElement) {
+        priceElement.textContent = `Rp ${price.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+}
+
+function refreshRealTimeData() {
+    const stockCode = "{{ stock_code }}";
+    
+    fetch(`/api/realtime_price/${stockCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateRealTimeDisplay(data);
+                
+                if (candlestickSeries) {
+                    const chartData = candlestickSeries.data();
+                    if (chartData && chartData.length > 0) {
+                        const lastDataPoint = chartData[chartData.length - 1];
+                        const updatedClose = data.current_price;
+                        const updatedOpen = lastDataPoint.open;
+                        const updatedHigh = Math.max(updatedOpen, updatedClose, lastDataPoint.high);
+                        const updatedLow = Math.min(updatedOpen, updatedClose, lastDataPoint.low);
+                        
+                        candlestickSeries.update({
+                            time: lastDataPoint.time,
+                            open: updatedOpen,
+                            high: updatedHigh,
+                            low: updatedLow,
+                            close: updatedClose
+                        });
+                        updateChartPrice(updatedClose);
+                    } else {
+                        // If no data, add the new point as a starting point
+                        const newTime = Math.floor(new Date().getTime() / 1000);
+                        candlestickSeries.update({
+                            time: newTime,
+                            open: data.current_price,
+                            high: data.current_price,
+                            low: data.current_price,
+                            close: data.current_price
+                        });
+                        updateChartPrice(data.current_price);
+                    }
+                }
+            } else {
+                console.warn('Real-time price update failed or returned no data.');
+            }
+        })
+        .catch(error => console.error('Error refreshing real-time data:', error));
+}
+
+function updateRealTimeDisplay(data) {
+    const chartPriceElement = document.getElementById('current-chart-price');
+    if (chartPriceElement) {
+        chartPriceElement.textContent = `Rp ${data.current_price.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    const stockInfoPriceElement = document.querySelector('.stock-basic-info .current-price');
+    const stockInfoPriceChangeElement = document.querySelector('.stock-basic-info .price-change');
+
+    if (stockInfoPriceElement) {
+        stockInfoPriceElement.textContent = `Rp ${data.current_price.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (stockInfoPriceChangeElement) {
+        stockInfoPriceChangeElement.textContent = `${data.price_change >= 0 ? '+' : ''}${data.price_change.toFixed(2)}%`;
+        stockInfoPriceChangeElement.classList.remove('positive', 'negative');
+        stockInfoPriceChangeElement.classList.add(data.price_change >= 0 ? 'positive' : 'negative');
+        
+        const icon = stockInfoPriceChangeElement.querySelector('i.fas');
+        if (icon) {
+            icon.classList.remove('fa-arrow-up', 'fa-arrow-down');
+            icon.classList.add(data.price_change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down');
+        }
+    }
+    
+    const volumeElement = document.querySelector('.stock-basic-info .detail-item .value:last-child');
+    if (volumeElement) {
+        volumeElement.textContent = data.volume.toLocaleString('id-ID');
+    }
+}
+
+function isMarketOpen() {
+    const now = new Date();
+    const day = now.getDay();
+    const hour = now.getHours();
+    // Assuming market hours are Monday-Friday, 9 AM to 4 PM (16:00)
+    return day >= 1 && day <= 5 && hour >= 9 && hour < 16;
+}
+
+function startAutoRefresh() {
+    // Clear any existing interval to prevent multiple intervals
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    autoRefreshInterval = setInterval(function() {
+        if (isMarketOpen()) {
+            console.log('[v0] Refreshing real-time data...');
+            refreshRealTimeData();
+        } else {
+            console.log('[v0] Market is closed, skipping auto-refresh.');
+        }
+    }, 15000); // Refresh every 15 seconds
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('[v0] DOM loaded, initializing...');
+    initializeChart();
+    startAutoRefresh(); // Start the auto-refresh on page load
+    refreshRealTimeData(); // Perform an initial refresh
+    
+    // Setup pagination only if anomalies exist
+    if (document.getElementById('anomalyTableBody') && document.getElementById('totalDataInfo') && parseInt(document.getElementById('totalDataInfo').textContent) > 0) {
+        setupPagination();
+    } else {
+        // Hide pagination if no data
+        const paginationControls = document.querySelector('.pagination-controls');
+        if (paginationControls) paginationControls.style.display = 'none';
+    }
+});
+
+
+// Add searchable stock list data
+const stocksData = {{ energy_stocks|tojson }};
+
+// Search functionality
+const searchInput = document.getElementById('stockSearch');
+const searchResults = document.getElementById('searchResults');
+const clearSearchBtn = document.getElementById('clearSearch');
+const selectedStockInput = document.getElementById('selectedStock');
+
+searchInput.addEventListener('input', function(e) {
+    const query = e.target.value.toLowerCase().trim();
+    
+    if (query.length === 0) {
+        searchResults.style.display = 'none';
+        clearSearchBtn.style.display = 'none';
+        return;
+    }
+    
+    clearSearchBtn.style.display = 'block';
+    
+    // Filter stocks
+    const filtered = Object.entries(stocksData).filter(([code, name]) => {
+        return code.toLowerCase().includes(query) || 
+               name.toLowerCase().includes(query);
+    });
+    
+    if (filtered.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item no-results">Tidak ada hasil</div>';
+        searchResults.style.display = 'block';
+        return;
+    }
+    
+    // Display results
+    searchResults.innerHTML = filtered.map(([code, name]) => `
+        <div class="search-result-item" data-code="${code}">
+            <div class="result-code">${code}</div>
+            <div class="result-name">${name}</div>
+        </div>
+    `).join('');
+    
+    searchResults.style.display = 'block';
+    
+    // Add click handlers
+    document.querySelectorAll('.search-result-item[data-code]').forEach(item => {
+        item.addEventListener('click', function() {
+            const code = this.dataset.code;
+            const name = stocksData[code];
+            searchInput.value = `${code} - ${name}`;
+            selectedStockInput.value = code;
+            searchResults.style.display = 'none';
+            
+            // Auto submit form
+            document.getElementById('periodForm').submit();
+        });
+    });
+});
+
+clearSearchBtn.addEventListener('click', function() {
+    searchInput.value = '';
+    searchResults.style.display = 'none';
+    clearSearchBtn.style.display = 'none';
+    searchInput.focus();
+});
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-container')) {
+        searchResults.style.display = 'none';
+    }
+});
+
+
+// --- Anomaly Table Pagination Logic ---
+
+let currentPage = 1;
+const itemsPerPage = 10; // Number of anomaly rows per page
+let allAnomalyRows = []; // To store all anomaly rows
+
+function setupPagination() {
+    const tableBody = document.getElementById('anomalyTableBody');
+    if (!tableBody) return;
+    
+    allAnomalyRows = Array.from(tableBody.children); // Get all rows including explanations
+    updatePageDisplay();
+}
+
+function updatePageDisplay() {
+    const tableBody = document.getElementById('anomalyTableBody');
+    const totalAnomalies = allAnomalyRows.length;
+    const totalPages = Math.ceil(totalAnomalies / itemsPerPage);
+    
+    // Clear current rows
+    tableBody.innerHTML = '';
+
+    // Calculate start and end index for the current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalAnomalies);
+
+    // Add rows for the current page
+    for (let i = startIndex; i < endIndex; i++) {
+        tableBody.appendChild(allAnomalyRows[i]);
+    }
+    
+    // Update pagination info
+    const currentPageInfo = document.getElementById('currentPageInfo');
+    const totalDataInfo = document.getElementById('totalDataInfo');
+    const pageNumbersContainer = document.getElementById('pageNumbers');
+    
+    if (currentPageInfo) currentPageInfo.textContent = `${startIndex + 1}-${endIndex}`;
+    if (totalDataInfo) totalDataInfo.textContent = totalAnomalies;
+    
+    // Update page number buttons
+    if (pageNumbersContainer) {
+        pageNumbersContainer.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+            const pageNumSpan = document.createElement('span');
+            pageNumSpan.textContent = i;
+            pageNumSpan.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageNumSpan.onclick = () => {
+                currentPage = i;
+                updatePageDisplay();
+            };
+            pageNumbersContainer.appendChild(pageNumSpan);
+        }
+    }
+    
+    // Update button states
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    
+    if (prevBtn) prevBtn.disabled = currentPage === 1;
+    if (nextBtn) nextBtn.disabled = currentPage === totalPages;
+}
+
+function changePage(direction) {
+    const totalAnomalies = allAnomalyRows.length;
+    const totalPages = Math.ceil(totalAnomalies / itemsPerPage);
+    
+    currentPage += direction;
+    
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    
+    updatePageDisplay();
+}
+
+// Initialize pagination when the DOM is loaded and data is available
+// This part is already handled at the end of the document.addEventListener('DOMContentLoaded')
+</script>
+
+{% endblock %}
