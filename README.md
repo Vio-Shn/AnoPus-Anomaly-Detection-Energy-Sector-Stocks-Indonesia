@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/placeholder-logo.png" alt="AnoPus Logo" width="120" height="120">
+  <img src="static/iamges/logo.png" alt="AnoPus Logo" width="120" height="120">
   
   # 🚀 AnoPus
   ### AI-Powered Trading Intelligence Platform
@@ -285,19 +285,13 @@ Kontribusi sangat diterima! Berikut cara contribute:
 5. Open Pull Request
 
 ---
-
-## 📝 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
 ---
 
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
-- Email: your.email@example.com
+- GitHub: [@vioshn](https://github.com/Vio-Shn)
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/viona-siahaan)
 
 ---
 
@@ -315,7 +309,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 <div align="center">
   <p>Made with ❤️ for Indonesian Traders</p>
   <p>⭐ Star this repo if you find it useful!</p>
-  
-  <img src="https://img.shields.io/github/stars/yourusername/anopus?style=social" alt="GitHub stars">
-  <img src="https://img.shields.io/github/forks/yourusername/anopus?style=social" alt="GitHub forks">
 </div>
